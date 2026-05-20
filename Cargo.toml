@@ -1,0 +1,15 @@
+[package]
+name = "faster_paths_benchmarks"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ch = { git = "file:///home/christianstaib/Documents/git/ch", branch = "bincode_test" }
+clap = { version = "4.4", features = ["derive"] }
+graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
+indicatif = { version = "0.18.4", features = ["rayon"] }
+ordered-float = "4"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+rand = "0.10.1"
+rayon = "1.10"
+serde_json = "1.0"
