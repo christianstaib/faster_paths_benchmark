@@ -1,6 +1,6 @@
 use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfinder};
+use ch::path::generate_queries;
 use ch::pathfinder::ShortestPathFinder;
-use ch::validation::generate_queries;
 use clap::{Parser, ValueEnum};
 use std::{fs::File, io::BufReader, path::PathBuf, time::Instant};
 

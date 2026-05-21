@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-ch = { git = "file:///home/christianstaib/Documents/git/ch", branch = "bincode_test" }
+ch = { path = "../ch" }
 clap = { version = "4.4", features = ["derive"] }
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
 indicatif = { version = "0.18.4", features = ["rayon"] }

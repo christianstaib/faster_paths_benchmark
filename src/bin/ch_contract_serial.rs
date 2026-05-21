@@ -1,5 +1,5 @@
 use ch::{
-    contraction_hierachy::contract_graph_sequential,
+    contraction_hierachy::{contract_graph_parallel, contract_graph_sequential},
     graph::{CsrGraph, WeightedEdge},
     types::VertexId,
 };
@@ -27,6 +27,7 @@ type DistanceType = u32;
 
 fn main() {
     let args = Args::parse();
+
     let edges = edges_from_fmi(
         BufReader::new(File::open(&args.graph).unwrap()),
         |s| s.parse::<u32>().ok().map(VertexId::new),
@@ -41,3 +42,4 @@ fn main() {
 
     postcard::to_io(&contraction_hierarchy, BufWriter::new(output)).unwrap();
 }
+

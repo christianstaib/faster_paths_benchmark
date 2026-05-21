@@ -1,8 +1,8 @@
 use ch::{
     contraction_hierachy::ContractionHierarchy,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
+    path::generate_queries,
     pathfinder::ShortestPathFinder,
-    validation::generate_queries,
 };
 use clap::{Parser, ValueEnum};
 use std::{fs::File, io::BufReader, path::PathBuf, time::Instant};

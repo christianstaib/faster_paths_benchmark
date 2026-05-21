@@ -1,7 +1,7 @@
 use ch::{
     graph::{CsrGraph, GraphLike, WeightedEdge},
+    path::generate_queries,
     types::VertexId,
-    validation::generate_queries,
 };
 use clap::Parser;
 use graph_readers::edges_from_fmi;
@@ -35,8 +35,8 @@ fn main() {
 
     let edges = edges_from_fmi(
         BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(VertexId::new),
-        |s| s.parse::<DistanceType>().ok(),
+        |vertex_str| vertex_str.parse::<u32>().ok().map(VertexId::new),
+        |weight_str| weight_str.parse::<DistanceType>().ok(),
         |tail, head, weight| WeightedEdge { tail, head, weight },
     )
     .unwrap();

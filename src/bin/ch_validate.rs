@@ -1,8 +1,8 @@
 use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfinder};
-use ch::graph::{CsrGraph, WeightedEdge};
+use ch::graph::WeightedEdge;
 use ch::path::PathDistance;
 use ch::types::VertexId;
-use ch::validation::validate;
+use ch::validation::{validate_distances, validate_paths};
 use clap::Parser;
 use graph_readers::edges_from_fmi;
 use std::{fs::File, io::BufReader, path::PathBuf};
@@ -35,29 +35,32 @@ fn main() {
     ))
     .unwrap();
 
-    let graph = args.graph.as_ref().map(|graph| {
-        let edges = edges_from_fmi(
+    let graph_edges = args.graph.as_ref().map(|graph| {
+        edges_from_fmi(
             BufReader::new(File::open(graph).unwrap()),
             |s| s.parse::<u32>().ok().map(VertexId::new),
             |s| s.parse::<DistanceType>().ok(),
             |tail, head, weight| WeightedEdge { tail, head, weight },
         )
-        .unwrap();
-
-        CsrGraph::from_flat(edges)
+        .unwrap()
     });
     let tests_input = File::open(&args.tests).unwrap();
     let tests: Vec<PathDistance<DistanceType>> =
         serde_json::from_reader(BufReader::new(tests_input)).unwrap();
 
     let mut pathfinder = ContractionHierarchyPathfinder::new(&contraction_hierarchy);
-    let validation_target = if graph.is_some() {
+    let validation_target = if graph_edges.is_some() {
         "paths"
     } else {
         "distances"
     };
 
-    match validate(&tests, graph.as_ref(), &mut pathfinder) {
+    let validation_result = match graph_edges.as_ref() {
+        Some(edges) => validate_paths(&tests, edges, &mut pathfinder),
+        None => validate_distances(&tests, &mut pathfinder),
+    };
+
+    match validation_result {
         Ok(average_runtime) => {
             println!(
                 "All {} {} correct. Average runtime: {:?}.",

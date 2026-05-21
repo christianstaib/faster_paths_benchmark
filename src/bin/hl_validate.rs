@@ -1,10 +1,10 @@
 use ch::{
     contraction_hierachy::ContractionHierarchy,
-    graph::{CsrGraph, WeightedEdge},
+    graph::WeightedEdge,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
     path::PathDistance,
     types::VertexId,
-    validation::validate,
+    validation::{validate_distances, validate_paths},
 };
 use clap::Parser;
 use graph_readers::edges_from_fmi;
@@ -35,16 +35,14 @@ type DistanceType = u32;
 fn main() {
     let args = Args::parse();
 
-    let graph = args.graph.as_ref().map(|graph| {
-        let edges = edges_from_fmi(
+    let graph_edges = args.graph.as_ref().map(|graph| {
+        edges_from_fmi(
             BufReader::new(File::open(graph).unwrap()),
             |s| s.parse::<u32>().ok().map(VertexId::new),
             |s| s.parse::<DistanceType>().ok(),
             |tail, head, weight| WeightedEdge { tail, head, weight },
         )
-        .unwrap();
-
-        CsrGraph::from_flat(edges)
+        .unwrap()
     });
 
     let (contraction_hierarchy, _): (ContractionHierarchy<DistanceType>, _) = postcard::from_io((
@@ -68,13 +66,18 @@ fn main() {
         hub_labeling: &hub_labeling,
     };
 
-    let validation_target = if graph.is_some() {
+    let validation_target = if graph_edges.is_some() {
         "paths"
     } else {
         "distances"
     };
 
-    match validate(&tests, graph.as_ref(), &mut pathfinder) {
+    let validation_result = match graph_edges.as_ref() {
+        Some(edges) => validate_paths(&tests, edges, &mut pathfinder),
+        None => validate_distances(&tests, &mut pathfinder),
+    };
+
+    match validation_result {
         Ok(average_runtime) => {
             println!(
                 "All {} {} correct. Average runtime: {:?}.",
