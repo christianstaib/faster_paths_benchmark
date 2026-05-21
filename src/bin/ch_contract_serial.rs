@@ -1,5 +1,5 @@
 use ch::{
-    contraction_hierachy::{contract_graph_parallel, contract_graph_sequential},
+    contraction_hierachy::contract_graph_sequential,
     graph::{CsrGraph, WeightedEdge},
     types::VertexId,
 };
@@ -42,4 +42,3 @@ fn main() {
 
     postcard::to_io(&contraction_hierarchy, BufWriter::new(output)).unwrap();
 }
-

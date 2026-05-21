@@ -28,6 +28,10 @@ struct Args {
     /// Test file
     #[arg(short, long)]
     tests: PathBuf,
+
+    /// Absolute comparison tolerance
+    #[arg(short, long)]
+    epsilon: DistanceType,
 }
 
 type DistanceType = u32;
@@ -73,8 +77,8 @@ fn main() {
     };
 
     let validation_result = match graph_edges.as_ref() {
-        Some(edges) => validate_paths(&tests, edges, &mut pathfinder),
-        None => validate_distances(&tests, &mut pathfinder),
+        Some(edges) => validate_paths(&tests, edges, &mut pathfinder, args.epsilon),
+        None => validate_distances(&tests, &mut pathfinder, args.epsilon),
     };
 
     match validation_result {

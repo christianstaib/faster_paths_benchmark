@@ -22,14 +22,18 @@ struct Args {
     /// Input graph file
     #[arg(short, long)]
     graph: PathBuf,
+
+    /// Absolute comparison tolerance used during validation
+    #[arg(short, long)]
+    epsilon: DistanceType,
 }
 
 type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();
-    let mut edges = {
-        match args.graph.extension().and_then(|e| e.to_str()) {
+    let edges = {
+        let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
                 |s| s.parse::<u32>().ok().map(VertexId::new),
@@ -46,11 +50,13 @@ fn main() {
             .unwrap(),
             Some(extension) => panic!("extension {} not found", extension),
             None => panic!("no extension found"),
-        }
+        };
+        edges.retain(|edge| edge.weight.is_sign_positive());
+        edges.par_sort();
+        edges.dedup_by_key(|edge| (edge.tail, edge.head));
+        edges
     };
-    edges.retain(|edge| edge.weight.is_sign_positive());
-    edges.par_sort();
-    edges.dedup_by_key(|edge| (edge.tail, edge.head));
+
     let graph = CsrGraph::from_flat(edges.clone());
 
     let num_valiations = 100;
@@ -73,7 +79,7 @@ fn main() {
 
     let mut pathfinder = ContractionHierarchyPathfinder::new(&contraction_hierarchy);
 
-    if let Err(failures) = validate_paths(&tests, &edges, &mut pathfinder) {
+    if let Err(failures) = validate_paths(&tests, &edges, &mut pathfinder, args.epsilon) {
         eprintln!(
             "Validation failed with {} of {} paths incorrect:",
             failures.len(),

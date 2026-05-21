@@ -8,7 +8,7 @@ ch = { path = "../ch" }
 clap = { version = "4.4", features = ["derive"] }
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
 indicatif = { version = "0.18.4", features = ["rayon"] }
-ordered-float = "4"
+ordered-float = "5.3"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rand = "0.10.1"
 rayon = "1.10"

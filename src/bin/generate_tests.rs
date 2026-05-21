@@ -7,8 +7,9 @@ use ch::{
     types::{Distance, VertexId},
 };
 use clap::Parser;
-use graph_readers::edges_from_fmi;
+use graph_readers::{edges_from_dimacs, edges_from_fmi};
 use indicatif::ParallelProgressIterator;
+use ordered_float::OrderedFloat;
 use rand::seq::index::sample;
 use rayon::prelude::*;
 use std::{
@@ -62,18 +63,35 @@ fn generate_tests<D: Distance>(
         .collect::<Vec<_>>()
 }
 
-type DistanceType = u32;
+type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();
 
-    let edges = edges_from_fmi(
-        BufReader::new(File::open(&args.graph).unwrap()),
-        |vertex_str| vertex_str.parse::<u32>().ok().map(VertexId::new),
-        |weight_str| weight_str.parse::<DistanceType>().ok(),
-        |tail, head, weight| WeightedEdge { tail, head, weight },
-    )
-    .unwrap();
+    let edges = {
+        let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
+            Some("fmi") => edges_from_fmi(
+                BufReader::new(File::open(&args.graph).unwrap()),
+                |s| s.parse::<u32>().ok().map(VertexId::new),
+                |s| s.parse::<DistanceType>().ok(),
+                |tail, head, weight| WeightedEdge { tail, head, weight },
+            )
+            .unwrap(),
+            Some("gr") => edges_from_dimacs(
+                BufReader::new(File::open(&args.graph).unwrap()),
+                |s| s.parse::<VertexId>().ok(),
+                |s| s.parse::<DistanceType>().ok(),
+                |tail, head, weight| WeightedEdge { tail, head, weight },
+            )
+            .unwrap(),
+            Some(extension) => panic!("extension {} not found", extension),
+            None => panic!("no extension found"),
+        };
+        edges.retain(|edge| edge.weight.is_sign_positive());
+        edges.par_sort();
+        edges.dedup_by_key(|edge| (edge.tail, edge.head));
+        edges
+    };
     let graph = CsrGraph::from_flat(edges);
 
     let start = Instant::now();

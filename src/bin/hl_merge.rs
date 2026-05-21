@@ -17,6 +17,10 @@ struct Args {
     /// Hub labeling File
     #[arg(short = 'l', long)]
     hub_labeling: PathBuf,
+
+    /// Absolute comparison tolerance used while pruning labels
+    #[arg(short, long)]
+    epsilon: DistanceType,
 }
 
 type DistanceType = u32;
@@ -31,11 +35,12 @@ fn main() {
     .unwrap();
 
     let start = Instant::now();
-    let hub_labeling = HubLabeling::try_from_contraction_hierarchy(&contraction_hierarchy).unwrap();
+    let hub_labeling =
+        HubLabeling::try_from_contraction_hierarchy(&contraction_hierarchy, args.epsilon).unwrap();
     println!("Merging took {:?}", start.elapsed());
 
-    let avg_label_size = hub_labeling.up_hub_labeling.num_flat() as f32
-        / hub_labeling.up_hub_labeling.num_nested() as f32;
+    let avg_label_size = hub_labeling.up_hub_labeling().num_flat() as f32
+        / hub_labeling.up_hub_labeling().num_nested() as f32;
     println!("Average label size is {}", avg_label_size);
 
     let start = Instant::now();

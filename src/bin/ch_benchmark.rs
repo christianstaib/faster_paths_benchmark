@@ -2,6 +2,7 @@ use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfin
 use ch::path::generate_queries;
 use ch::pathfinder::ShortestPathFinder;
 use clap::{Parser, ValueEnum};
+use ordered_float::OrderedFloat;
 use std::{fs::File, io::BufReader, path::PathBuf, time::Instant};
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -26,7 +27,7 @@ struct Args {
     mode: BenchmarkMode,
 }
 
-type DistanceType = u32;
+type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();
