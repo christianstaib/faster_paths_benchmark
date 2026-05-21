@@ -1,15 +1,14 @@
 use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfinder};
-use ch::path::generate_queries;
+use ch::path::{PathQuery, generate_queries};
 use ch::pathfinder::ShortestPathFinder;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use ordered_float::OrderedFloat;
-use std::{fs::File, io::BufReader, path::PathBuf, time::Instant};
-
-#[derive(Clone, Copy, Debug, ValueEnum)]
-enum BenchmarkMode {
-    Distance,
-    Path,
-}
+use std::{
+    fs::File,
+    io::BufReader,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -21,10 +20,6 @@ struct Args {
     /// Test file
     #[arg(short, long)]
     num: usize,
-
-    /// Benchmark mode
-    #[arg(short, long, value_enum)]
-    mode: BenchmarkMode,
 }
 
 type DistanceType = OrderedFloat<f64>;
@@ -43,32 +38,41 @@ fn main() {
     let warmup_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
     let benchmark_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
 
-    match args.mode {
-        BenchmarkMode::Distance => warmup_queries.iter().for_each(|query| {
-            pathfinder.distance(query);
-        }),
+    let distance_duration = benchmark(&warmup_queries, &benchmark_queries, |query| {
+        pathfinder.distance(query);
+    });
+    print_average("distance", distance_duration, benchmark_queries.len());
 
-        BenchmarkMode::Path => warmup_queries.iter().for_each(|query| {
-            pathfinder.path(query);
-        }),
-    };
+    let path_duration = benchmark(&warmup_queries, &benchmark_queries, |query| {
+        pathfinder.path(query);
+    });
+    print_average("path", path_duration, benchmark_queries.len());
+}
+
+fn benchmark<F>(
+    warmup_queries: &[PathQuery],
+    benchmark_queries: &[PathQuery],
+    mut run_query: F,
+) -> Duration
+where
+    F: FnMut(&PathQuery),
+{
+    for query in warmup_queries {
+        run_query(query);
+    }
 
     let start = Instant::now();
-    match args.mode {
-        BenchmarkMode::Distance => benchmark_queries.iter().for_each(|query| {
-            pathfinder.distance(query);
-        }),
+    for query in benchmark_queries {
+        run_query(query);
+    }
+    start.elapsed()
+}
 
-        BenchmarkMode::Path => benchmark_queries.iter().for_each(|query| {
-            pathfinder.path(query);
-        }),
-    };
-    let whole_duration = start.elapsed();
-
+fn print_average(benchmark_target: &str, duration: Duration, num_queries: usize) {
     println!(
-        "Took on average {:?} over {} {:?} queries.",
-        whole_duration / benchmark_queries.len() as u32,
-        benchmark_queries.len(),
-        args.mode,
+        "Took on average {:?} over {} {} queries.",
+        duration / num_queries as u32,
+        num_queries,
+        benchmark_target,
     );
 }

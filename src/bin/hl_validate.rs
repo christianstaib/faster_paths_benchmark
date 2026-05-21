@@ -8,14 +8,15 @@ use ch::{
 };
 use clap::Parser;
 use graph_readers::edges_from_fmi;
-use std::{fs::File, io::BufReader, path::PathBuf};
+use rayon::prelude::*;
+use std::{fs::File, io::BufReader, path::PathBuf, time::Duration};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Input graph file
     #[arg(short, long)]
-    graph: Option<PathBuf>,
+    graph: PathBuf,
 
     /// Contraction hierarchy file
     #[arg(short, long)]
@@ -39,15 +40,15 @@ type DistanceType = u32;
 fn main() {
     let args = Args::parse();
 
-    let graph_edges = args.graph.as_ref().map(|graph| {
-        edges_from_fmi(
-            BufReader::new(File::open(graph).unwrap()),
-            |s| s.parse::<u32>().ok().map(VertexId::new),
-            |s| s.parse::<DistanceType>().ok(),
-            |tail, head, weight| WeightedEdge { tail, head, weight },
-        )
-        .unwrap()
-    });
+    let mut graph_edges = edges_from_fmi(
+        BufReader::new(File::open(&args.graph).unwrap()),
+        |s| s.parse::<u32>().ok().map(VertexId::new),
+        |s| s.parse::<DistanceType>().ok(),
+        |tail, head, weight| WeightedEdge { tail, head, weight },
+    )
+    .unwrap();
+    graph_edges.par_sort();
+    graph_edges.dedup_by_key(|edge| (edge.tail, edge.head));
 
     let (contraction_hierarchy, _): (ContractionHierarchy<DistanceType>, _) = postcard::from_io((
         BufReader::new(File::open(&args.contraction_hierarchy).unwrap()),
@@ -70,25 +71,29 @@ fn main() {
         hub_labeling: &hub_labeling,
     };
 
-    let validation_target = if graph_edges.is_some() {
-        "paths"
-    } else {
-        "distances"
-    };
+    let distance_result = validate_distances(&tests, &mut pathfinder, args.epsilon);
+    let path_result = validate_paths(&tests, &graph_edges, &mut pathfinder, args.epsilon);
 
-    let validation_result = match graph_edges.as_ref() {
-        Some(edges) => validate_paths(&tests, edges, &mut pathfinder, args.epsilon),
-        None => validate_distances(&tests, &mut pathfinder, args.epsilon),
-    };
+    let distances_valid = report_validation_result("distances", tests.len(), distance_result);
+    let paths_valid = report_validation_result("paths", tests.len(), path_result);
 
+    if !distances_valid || !paths_valid {
+        std::process::exit(1);
+    }
+}
+
+fn report_validation_result(
+    validation_target: &str,
+    tests_len: usize,
+    validation_result: Result<Duration, Vec<String>>,
+) -> bool {
     match validation_result {
         Ok(average_runtime) => {
             println!(
                 "All {} {} correct. Average runtime: {:?}.",
-                tests.len(),
-                validation_target,
-                average_runtime
+                tests_len, validation_target, average_runtime
             );
+            true
         }
 
         Err(failures) => {
@@ -97,10 +102,10 @@ fn main() {
             eprintln!(
                 "{} of {} {} failed.",
                 failures.len(),
-                tests.len(),
+                tests_len,
                 validation_target
             );
-            std::process::exit(1);
+            false
         }
     }
 }
