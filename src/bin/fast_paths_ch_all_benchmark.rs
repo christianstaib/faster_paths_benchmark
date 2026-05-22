@@ -1,14 +1,14 @@
-use ch::{
+use clap::Parser;
+use fast_paths::{FastGraph, InputGraph, PathCalculator};
+use faster_paths::{
     classical_search::DijkstraPathfinder,
     data_structures::VecSearchState,
     graph::{CsrGraph, GraphLike, WeightedEdge},
-    path::{Path, PathDistance, PathQuery, generate_queries},
+    path::{Path, Query, generate_random_queries},
     pathfinder::ShortestPathFinder,
-    types::VertexId,
-    validation::validate_paths,
+    types::Vertex,
+    validation::{PathTestCase, validate_paths},
 };
-use clap::Parser;
-use fast_paths::{FastGraph, InputGraph, PathCalculator};
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
@@ -45,7 +45,7 @@ impl<'a> FastPathsPathfinder<'a> {
 impl ShortestPathFinder for FastPathsPathfinder<'_> {
     type Distance = DistanceType;
 
-    fn path(&mut self, query: &PathQuery) -> Option<Path<Self::Distance>> {
+    fn path(&mut self, query: &Query) -> Option<Path<Self::Distance>> {
         let shortest_path = self.path_calculator.calc_path(
             self.fast_graph,
             query.source.as_usize(),
@@ -56,13 +56,13 @@ impl ShortestPathFinder for FastPathsPathfinder<'_> {
             vertices: shortest_path
                 .get_nodes()
                 .iter()
-                .map(|&node| VertexId::new(u32::try_from(node).unwrap()))
+                .map(|&node| Vertex::new(u32::try_from(node).unwrap()))
                 .collect(),
             distance: shortest_path.get_weight(),
         })
     }
 
-    fn distance(&mut self, query: &PathQuery) -> Option<Self::Distance> {
+    fn distance(&mut self, query: &Query) -> Option<Self::Distance> {
         self.path_calculator
             .calc_path(
                 self.fast_graph,
@@ -80,13 +80,13 @@ fn main() {
     let input_graph = build_fast_paths_input_graph(&edges);
 
     let num_validations = 100;
-    let validation_queries = generate_queries(graph.num_vertices(), num_validations);
+    let validation_queries = generate_random_queries(graph.num_vertices(), num_validations);
     let tests = validation_queries
         .into_par_iter()
         .progress()
         .map_init(
             || DijkstraPathfinder::<_, VecSearchState<_>>::new(&graph),
-            |pathfinder, query| PathDistance::new(query, pathfinder.distance(&query)),
+            |pathfinder, query| PathTestCase::new(query, pathfinder.distance(&query)),
         )
         .collect::<Vec<_>>();
 
@@ -117,8 +117,8 @@ fn main() {
 
     let benchmark_runs = 1_000;
     {
-        let warmup = generate_queries(fast_graph.get_num_nodes(), benchmark_runs);
-        let benchmark = generate_queries(fast_graph.get_num_nodes(), benchmark_runs);
+        let warmup = generate_random_queries(fast_graph.get_num_nodes(), benchmark_runs);
+        let benchmark = generate_random_queries(fast_graph.get_num_nodes(), benchmark_runs);
 
         warmup.iter().for_each(|query| {
             pathfinder.path(query);
@@ -136,8 +136,8 @@ fn main() {
         );
     }
     {
-        let warmup = generate_queries(fast_graph.get_num_nodes(), benchmark_runs);
-        let benchmark = generate_queries(fast_graph.get_num_nodes(), benchmark_runs);
+        let warmup = generate_random_queries(fast_graph.get_num_nodes(), benchmark_runs);
+        let benchmark = generate_random_queries(fast_graph.get_num_nodes(), benchmark_runs);
 
         warmup.iter().for_each(|query| {
             pathfinder.distance(query);
@@ -160,14 +160,14 @@ fn read_edges(graph: &PathBuf) -> Vec<WeightedEdge<DistanceType>> {
     let mut edges = match graph.extension().and_then(|e| e.to_str()) {
         Some("fmi") => edges_from_fmi(
             BufReader::new(File::open(graph).unwrap()),
-            |s| s.parse::<u32>().ok().map(VertexId::new),
+            |s| s.parse::<u32>().ok().map(Vertex::new),
             |s| s.parse::<DistanceType>().ok(),
             |tail, head, weight| WeightedEdge { tail, head, weight },
         )
         .unwrap(),
         Some("gr") => edges_from_dimacs(
             BufReader::new(File::open(graph).unwrap()),
-            |s| s.parse::<VertexId>().ok(),
+            |s| s.parse::<Vertex>().ok(),
             |s| s.parse::<DistanceType>().ok(),
             |tail, head, weight| WeightedEdge { tail, head, weight },
         )

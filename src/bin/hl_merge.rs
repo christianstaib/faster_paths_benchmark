@@ -1,4 +1,4 @@
-use ch::{contraction_hierachy::ContractionHierarchy, hub_labeling::HubLabeling};
+use faster_paths::{contraction_hierarchy::ContractionHierarchy, hub_labeling::HubLabeling};
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use std::{

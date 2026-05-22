@@ -1,8 +1,4 @@
-use ch::{
-    contraction_hierachy::contract_graph_parallel,
-    graph::{CsrGraph, WeightedEdge},
-    types::VertexId,
-};
+use faster_paths::{contraction_hierarchy::contract_graph_parallel, graph::WeightedEdge, types::Vertex};
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
@@ -26,9 +22,9 @@ struct Args {
     #[arg(short, long)]
     contraction_hierarchy: PathBuf,
 
-    /// Candidate fraction
-    #[arg(short, long, default_value_t = 0.5)]
-    fraction: f64,
+    /// Accepted for CLI compatibility; faster_paths uses its built-in candidate fraction.
+    #[arg(short, long = "fraction", default_value_t = 0.5)]
+    _fraction: f64,
 }
 
 fn main() {
@@ -38,14 +34,14 @@ fn main() {
         let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(VertexId::new),
+                |s| s.parse::<u32>().ok().map(Vertex::new),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
             .unwrap(),
             Some("gr") => edges_from_dimacs(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<VertexId>().ok(),
+                |s| s.parse::<Vertex>().ok(),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
@@ -58,10 +54,8 @@ fn main() {
         edges.dedup_by_key(|edge| (edge.tail, edge.head));
         edges
     };
-    let graph = CsrGraph::from_flat(edges);
-
     let start = Instant::now();
-    let contraction_hierarchy = contract_graph_parallel(&graph, args.fraction);
+    let contraction_hierarchy = contract_graph_parallel(&edges);
     println!("Contraction took {:?}", start.elapsed());
 
     let output = File::create(args.contraction_hierarchy).unwrap();

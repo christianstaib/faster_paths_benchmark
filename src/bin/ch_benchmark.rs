@@ -1,6 +1,6 @@
-use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfinder};
-use ch::path::{PathQuery, generate_queries};
-use ch::pathfinder::ShortestPathFinder;
+use faster_paths::contraction_hierarchy::{ContractionHierarchy, ContractionHierarchyPathfinder};
+use faster_paths::path::{Query, generate_random_queries};
+use faster_paths::pathfinder::ShortestPathFinder;
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use std::{
@@ -33,8 +33,8 @@ fn main() {
     .unwrap();
     let mut pathfinder = ContractionHierarchyPathfinder::new(&contraction_hierarchy);
 
-    let warmup_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
-    let benchmark_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
+    let warmup_queries = generate_random_queries(contraction_hierarchy.num_vertices(), args.num);
+    let benchmark_queries = generate_random_queries(contraction_hierarchy.num_vertices(), args.num);
 
     let distance_duration = benchmark(&warmup_queries, &benchmark_queries, |query| {
         pathfinder.distance(query);
@@ -47,13 +47,9 @@ fn main() {
     print_average("path", path_duration, benchmark_queries.len());
 }
 
-fn benchmark<F>(
-    warmup_queries: &[PathQuery],
-    benchmark_queries: &[PathQuery],
-    mut run_query: F,
-) -> Duration
+fn benchmark<F>(warmup_queries: &[Query], benchmark_queries: &[Query], mut run_query: F) -> Duration
 where
-    F: FnMut(&PathQuery),
+    F: FnMut(&Query),
 {
     for query in warmup_queries {
         run_query(query);

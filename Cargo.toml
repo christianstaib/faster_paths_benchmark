@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# ch = { path = "../ch" }
-ch = { git = "https://github.com/christianstaib/faster_paths.git" }
+faster_paths = { path = "../faster_paths/" }
+# faster_paths  = { git = "https://github.com/christianstaib/faster_paths.git" }
 clap = { version = "4.4", features = ["derive"] }
 fast_paths = "1.0.0"
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
@@ -15,4 +15,5 @@ ordered-float = "5.3"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rand = "0.10.1"
 rayon = "1.10"
+rustc-hash = "2.1"
 serde_json = "1.0"

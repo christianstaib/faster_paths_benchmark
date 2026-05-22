@@ -1,7 +1,7 @@
-use ch::{
-    contraction_hierachy::ContractionHierarchy,
+use faster_paths::{
+    contraction_hierarchy::ContractionHierarchy,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
-    path::{PathQuery, generate_queries},
+    path::{Query, generate_random_queries},
     pathfinder::ShortestPathFinder,
 };
 use clap::Parser;
@@ -44,13 +44,10 @@ fn main() {
     ))
     .unwrap();
 
-    let mut pathfinder = HubLabelingPathfinder {
-        contraction_hierarchy: &contraction_hierarchy,
-        hub_labeling: &hub_labeling,
-    };
+    let mut pathfinder = HubLabelingPathfinder::new(&contraction_hierarchy, &hub_labeling);
 
-    let warmup_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
-    let benchmark_queries = generate_queries(contraction_hierarchy.num_vertices(), args.num);
+    let warmup_queries = generate_random_queries(contraction_hierarchy.num_vertices(), args.num);
+    let benchmark_queries = generate_random_queries(contraction_hierarchy.num_vertices(), args.num);
 
     let distance_duration = benchmark(&warmup_queries, &benchmark_queries, |query| {
         pathfinder.distance(query);
@@ -63,13 +60,9 @@ fn main() {
     print_average("path", path_duration, benchmark_queries.len());
 }
 
-fn benchmark<F>(
-    warmup_queries: &[PathQuery],
-    benchmark_queries: &[PathQuery],
-    mut run_query: F,
-) -> Duration
+fn benchmark<F>(warmup_queries: &[Query], benchmark_queries: &[Query], mut run_query: F) -> Duration
 where
-    F: FnMut(&PathQuery),
+    F: FnMut(&Query),
 {
     for query in warmup_queries {
         run_query(query);

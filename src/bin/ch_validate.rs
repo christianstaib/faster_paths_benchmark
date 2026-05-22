@@ -1,8 +1,7 @@
-use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfinder};
-use ch::graph::WeightedEdge;
-use ch::path::PathDistance;
-use ch::types::VertexId;
-use ch::validation::{validate_distances, validate_paths};
+use faster_paths::contraction_hierarchy::{ContractionHierarchy, ContractionHierarchyPathfinder};
+use faster_paths::graph::WeightedEdge;
+use faster_paths::types::Vertex;
+use faster_paths::validation::{PathTestCase, validate_distances, validate_paths};
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
@@ -44,14 +43,14 @@ fn main() {
         let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(VertexId::new),
+                |s| s.parse::<u32>().ok().map(Vertex::new),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
             .unwrap(),
             Some("gr") => edges_from_dimacs(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<VertexId>().ok(),
+                |s| s.parse::<Vertex>().ok(),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
@@ -65,7 +64,7 @@ fn main() {
         edges
     };
     let tests_input = File::open(&args.tests).unwrap();
-    let tests: Vec<PathDistance<DistanceType>> =
+    let tests: Vec<PathTestCase<DistanceType>> =
         serde_json::from_reader(BufReader::new(tests_input)).unwrap();
 
     let mut pathfinder = ContractionHierarchyPathfinder::new(&contraction_hierarchy);

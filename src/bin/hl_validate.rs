@@ -1,10 +1,9 @@
-use ch::{
-    contraction_hierachy::ContractionHierarchy,
+use faster_paths::{
+    contraction_hierarchy::ContractionHierarchy,
     graph::WeightedEdge,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
-    path::PathDistance,
-    types::VertexId,
-    validation::{validate_distances, validate_paths},
+    types::Vertex,
+    validation::{PathTestCase, validate_distances, validate_paths},
 };
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
@@ -41,7 +40,7 @@ fn main() {
 
     let mut graph_edges = edges_from_fmi(
         BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(VertexId::new),
+        |s| s.parse::<u32>().ok().map(Vertex::new),
         |s| s.parse::<DistanceType>().ok(),
         |tail, head, weight| WeightedEdge { tail, head, weight },
     )
@@ -62,13 +61,10 @@ fn main() {
     .unwrap();
 
     let tests_input = File::open(&args.tests).unwrap();
-    let tests: Vec<PathDistance<DistanceType>> =
+    let tests: Vec<PathTestCase<DistanceType>> =
         serde_json::from_reader(BufReader::new(tests_input)).unwrap();
 
-    let mut pathfinder = HubLabelingPathfinder {
-        contraction_hierarchy: &contraction_hierarchy,
-        hub_labeling: &hub_labeling,
-    };
+    let mut pathfinder = HubLabelingPathfinder::new(&contraction_hierarchy, &hub_labeling);
 
     let distance_result = validate_distances(&tests, &mut pathfinder, args.epsilon);
     let path_result = validate_paths(&tests, &graph_edges, &mut pathfinder, args.epsilon);

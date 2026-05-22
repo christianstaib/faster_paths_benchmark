@@ -1,8 +1,4 @@
-use ch::{
-    contraction_hierachy::contract_graph_sequential,
-    graph::{CsrGraph, WeightedEdge},
-    types::VertexId,
-};
+use faster_paths::{contraction_hierarchy::contract_graph_sequential, graph::WeightedEdge, types::Vertex};
 use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use graph_readers::edges_from_fmi;
@@ -29,14 +25,12 @@ fn main() {
 
     let edges = edges_from_fmi(
         BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(VertexId::new),
+        |s| s.parse::<u32>().ok().map(Vertex::new),
         |s| s.parse::<DistanceType>().ok(),
         |tail, head, weight| WeightedEdge { tail, head, weight },
     )
     .unwrap();
-    let graph = CsrGraph::from_flat(edges);
-
-    let contraction_hierarchy = contract_graph_sequential(&graph);
+    let contraction_hierarchy = contract_graph_sequential(&edges);
     let output = File::create(args.contraction_hierarchy).unwrap();
 
     postcard::to_io(&contraction_hierarchy, BufWriter::new(output)).unwrap();
