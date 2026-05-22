@@ -1,5 +1,6 @@
 use ch::{contraction_hierachy::ContractionHierarchy, hub_labeling::HubLabeling};
 use clap::Parser;
+use ordered_float::OrderedFloat;
 use std::{
     fs::File,
     io::{BufReader, BufWriter},
@@ -23,7 +24,7 @@ struct Args {
     epsilon: DistanceType,
 }
 
-type DistanceType = u32;
+type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();

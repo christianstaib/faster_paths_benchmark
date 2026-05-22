@@ -11,6 +11,7 @@ use std::{
     fs::File,
     io::{BufReader, BufWriter},
     path::PathBuf,
+    time::Instant,
 };
 
 #[derive(Parser, Debug)]
@@ -60,8 +61,10 @@ fn main() {
     };
     let graph = CsrGraph::from_flat(edges);
 
+    let start = Instant::now();
     let contraction_hierarchy = contract_graph_parallel(&graph, args.fraction);
-    let output = File::create(args.contraction_hierarchy).unwrap();
+    println!("Contraction took {:?}", start.elapsed());
 
+    let output = File::create(args.contraction_hierarchy).unwrap();
     postcard::to_io(&contraction_hierarchy, BufWriter::new(output)).unwrap();
 }
