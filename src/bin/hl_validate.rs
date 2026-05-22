@@ -7,6 +7,7 @@ use ch::{
     validation::{validate_distances, validate_paths},
 };
 use clap::Parser;
+use faster_paths_benchmarks::DistanceType;
 use graph_readers::edges_from_fmi;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, path::PathBuf, time::Duration};
@@ -34,8 +35,6 @@ struct Args {
     #[arg(short, long)]
     epsilon: DistanceType,
 }
-
-type DistanceType = u32;
 
 fn main() {
     let args = Args::parse();

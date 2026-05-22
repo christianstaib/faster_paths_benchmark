@@ -1,6 +1,6 @@
 use ch::{contraction_hierachy::ContractionHierarchy, hub_labeling::HubLabeling};
 use clap::Parser;
-use ordered_float::OrderedFloat;
+use faster_paths_benchmarks::DistanceType;
 use std::{
     fs::File,
     io::{BufReader, BufWriter},
@@ -23,8 +23,6 @@ struct Args {
     #[arg(short, long)]
     epsilon: DistanceType,
 }
-
-type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();

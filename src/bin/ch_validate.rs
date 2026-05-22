@@ -4,8 +4,9 @@ use ch::path::PathDistance;
 use ch::types::VertexId;
 use ch::validation::{validate_distances, validate_paths};
 use clap::Parser;
+use faster_paths_benchmarks::DistanceType;
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
-use ordered_float::OrderedFloat;
+use num_traits::Zero;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, path::PathBuf, time::Duration};
 
@@ -28,8 +29,6 @@ struct Args {
     #[arg(short, long)]
     epsilon: DistanceType,
 }
-
-type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();
@@ -60,7 +59,7 @@ fn main() {
             Some(extension) => panic!("extension {} not found", extension),
             None => panic!("no extension found"),
         };
-        edges.retain(|edge| edge.weight.is_sign_positive());
+        edges.retain(|edge| edge.weight >= DistanceType::zero());
         edges.par_sort();
         edges.dedup_by_key(|edge| (edge.tail, edge.head));
         edges

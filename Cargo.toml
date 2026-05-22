@@ -6,8 +6,10 @@ edition = "2024"
 [dependencies]
 ch = { path = "../ch" }
 clap = { version = "4.4", features = ["derive"] }
+fast_paths = "1.0.0"
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
 indicatif = { version = "0.18.4", features = ["rayon"] }
+num-traits = "0.2.19"
 ordered-float = "5.3"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rand = "0.10.1"

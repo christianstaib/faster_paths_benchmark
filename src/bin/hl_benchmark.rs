@@ -5,6 +5,7 @@ use ch::{
     pathfinder::ShortestPathFinder,
 };
 use clap::Parser;
+use faster_paths_benchmarks::DistanceType;
 use std::{
     fs::File,
     io::BufReader,
@@ -27,8 +28,6 @@ struct Args {
     #[arg(short, long)]
     num: usize,
 }
-
-type DistanceType = u32;
 
 fn main() {
     let args = Args::parse();

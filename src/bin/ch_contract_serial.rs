@@ -4,6 +4,7 @@ use ch::{
     types::VertexId,
 };
 use clap::Parser;
+use faster_paths_benchmarks::DistanceType;
 use graph_readers::edges_from_fmi;
 use std::{
     fs::File,
@@ -22,8 +23,6 @@ struct Args {
     #[arg(short, long)]
     contraction_hierarchy: PathBuf,
 }
-
-type DistanceType = u32;
 
 fn main() {
     let args = Args::parse();

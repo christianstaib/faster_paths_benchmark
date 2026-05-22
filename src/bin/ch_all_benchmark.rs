@@ -9,10 +9,11 @@ use ch::{
     validation::validate_paths,
 };
 use clap::Parser;
+use faster_paths_benchmarks::DistanceType;
 use graph_readers::edges_from_dimacs;
 use graph_readers::edges_from_fmi;
 use indicatif::ParallelProgressIterator;
-use ordered_float::OrderedFloat;
+use num_traits::Zero;
 use rayon::prelude::*;
 use std::{fs::File, io::BufReader, path::PathBuf, time::Instant};
 
@@ -28,15 +29,13 @@ struct Args {
     epsilon: DistanceType,
 }
 
-type DistanceType = OrderedFloat<f64>;
-
 fn main() {
     let args = Args::parse();
     let edges = {
         let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(VertexId::new),
+                |s| s.parse::<VertexId>().ok(),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
@@ -51,7 +50,7 @@ fn main() {
             Some(extension) => panic!("extension {} not found", extension),
             None => panic!("no extension found"),
         };
-        edges.retain(|edge| edge.weight.is_sign_positive());
+        edges.retain(|edge| edge.weight >= DistanceType::zero());
         edges.par_sort();
         edges.dedup_by_key(|edge| (edge.tail, edge.head));
         edges

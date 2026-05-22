@@ -2,7 +2,7 @@ use ch::contraction_hierachy::{ContractionHierarchy, ContractionHierarchyPathfin
 use ch::path::{PathQuery, generate_queries};
 use ch::pathfinder::ShortestPathFinder;
 use clap::Parser;
-use ordered_float::OrderedFloat;
+use faster_paths_benchmarks::DistanceType;
 use std::{
     fs::File,
     io::BufReader,
@@ -21,8 +21,6 @@ struct Args {
     #[arg(short, long)]
     num: usize,
 }
-
-type DistanceType = OrderedFloat<f64>;
 
 fn main() {
     let args = Args::parse();
