@@ -1,7 +1,8 @@
-use faster_paths::contraction_hierarchy::{ContractionHierarchy, ContractionHierarchyPathfinder};
-use faster_paths::path::{Query, generate_random_queries};
-use faster_paths::pathfinder::ShortestPathFinder;
 use clap::Parser;
+use faster_paths::contraction_hierarchy::{ContractionHierarchy, ContractionHierarchyPathfinder};
+use faster_paths::path::Query;
+use faster_paths::pathfinder::ShortestPathFinder;
+use faster_paths::validation::generate_random_queries;
 use faster_paths_benchmarks::DistanceType;
 use std::{
     fs::File,

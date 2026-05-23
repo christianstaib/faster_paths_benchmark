@@ -4,10 +4,10 @@ use faster_paths::{
     classical_search::DijkstraPathfinder,
     data_structures::VecSearchState,
     graph::{CsrGraph, GraphLike, WeightedEdge},
-    path::{Path, Query, generate_random_queries},
+    path::{Path, Query},
     pathfinder::ShortestPathFinder,
     types::Vertex,
-    validation::{PathTestCase, validate_paths},
+    validation::{PathTestCase, generate_random_queries, validate_paths},
 };
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
 use indicatif::ParallelProgressIterator;
@@ -56,7 +56,7 @@ impl ShortestPathFinder for FastPathsPathfinder<'_> {
             vertices: shortest_path
                 .get_nodes()
                 .iter()
-                .map(|&node| Vertex::new(u32::try_from(node).unwrap()))
+                .map(|&node| Vertex::from(u32::try_from(node).unwrap()))
                 .collect(),
             distance: shortest_path.get_weight(),
         })
@@ -86,7 +86,10 @@ fn main() {
         .progress()
         .map_init(
             || DijkstraPathfinder::<_, VecSearchState<_>>::new(&graph),
-            |pathfinder, query| PathTestCase::new(query, pathfinder.distance(&query)),
+            |pathfinder, query| PathTestCase {
+                query,
+                distance: pathfinder.distance(&query),
+            },
         )
         .collect::<Vec<_>>();
 
@@ -160,7 +163,7 @@ fn read_edges(graph: &PathBuf) -> Vec<WeightedEdge<DistanceType>> {
     let mut edges = match graph.extension().and_then(|e| e.to_str()) {
         Some("fmi") => edges_from_fmi(
             BufReader::new(File::open(graph).unwrap()),
-            |s| s.parse::<u32>().ok().map(Vertex::new),
+            |s| s.parse::<u32>().ok().map(Vertex::from),
             |s| s.parse::<DistanceType>().ok(),
             |tail, head, weight| WeightedEdge { tail, head, weight },
         )

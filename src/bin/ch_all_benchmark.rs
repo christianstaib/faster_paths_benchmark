@@ -4,10 +4,9 @@ use faster_paths::{
     contraction_hierarchy::{ContractionHierarchyPathfinder, contract_graph_parallel},
     data_structures::VecSearchState,
     graph::{CsrGraph, GraphLike, WeightedEdge},
-    path::generate_random_queries,
     pathfinder::ShortestPathFinder,
     types::Vertex,
-    validation::{PathTestCase, validate_paths},
+    validation::{PathTestCase, generate_random_queries, validate_paths},
 };
 use faster_paths_benchmarks::DistanceType;
 use graph_readers::edges_from_dimacs;
@@ -65,7 +64,10 @@ fn main() {
         .progress()
         .map_init(
             || DijkstraPathfinder::<_, VecSearchState<_>>::new(&graph),
-            |pathfinder, query| PathTestCase::new(query, pathfinder.distance(&query)),
+            |pathfinder, query| PathTestCase {
+                query,
+                distance: pathfinder.distance(&query),
+            },
         )
         .collect::<Vec<_>>();
 

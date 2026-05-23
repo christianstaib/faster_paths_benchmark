@@ -1,14 +1,14 @@
+use clap::Parser;
 use faster_paths::{
     contraction_hierarchy::{
         ContractionHierarchy, build_working_graph, contract_working_graph_sequential_with_order,
     },
     graph::WeightedEdge,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
-    path::generate_random_queries,
     pathfinder::ShortestPathFinder,
     types::Vertex,
+    validation::generate_random_queries,
 };
-use clap::Parser;
 use faster_paths_benchmarks::DistanceType;
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
 use indicatif::{ParallelProgressIterator, ProgressBar};
@@ -41,7 +41,7 @@ fn main() {
         let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(Vertex::new),
+                |s| s.parse::<u32>().ok().map(Vertex::from),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )
@@ -107,7 +107,7 @@ fn main() {
 
     hs.extend(not_selected_vertices);
 
-    let order: Vec<Vertex> = hs.into_iter().map(Vertex::new).collect();
+    let order: Vec<Vertex> = hs.into_iter().map(Vertex::from).collect();
     std::mem::drop(paths);
 
     let working_graph = build_working_graph(&edges);

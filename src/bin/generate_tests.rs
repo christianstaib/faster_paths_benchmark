@@ -49,8 +49,8 @@ fn generate_tests<D: Distance>(
             let vertices = sample(&mut rng, num_vertices, 2);
 
             Query {
-                source: Vertex::new(vertices.index(0) as u32),
-                target: Vertex::new(vertices.index(1) as u32),
+                source: Vertex::from(vertices.index(0) as u32),
+                target: Vertex::from(vertices.index(1) as u32),
             }
         })
         .collect::<Vec<_>>();
@@ -60,7 +60,10 @@ fn generate_tests<D: Distance>(
         .progress()
         .map_init(
             || DijkstraPathfinder::<_, VecSearchState<_>>::new(graph),
-            |pathfinder, query| PathTestCase::new(query, pathfinder.distance(&query)),
+            |pathfinder, query| PathTestCase {
+                query,
+                distance: pathfinder.distance(&query),
+            },
         )
         .collect::<Vec<_>>()
 }
@@ -72,7 +75,7 @@ fn main() {
         let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
             Some("fmi") => edges_from_fmi(
                 BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(Vertex::new),
+                |s| s.parse::<u32>().ok().map(Vertex::from),
                 |s| s.parse::<DistanceType>().ok(),
                 |tail, head, weight| WeightedEdge { tail, head, weight },
             )

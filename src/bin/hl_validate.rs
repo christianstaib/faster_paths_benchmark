@@ -40,7 +40,7 @@ fn main() {
 
     let mut graph_edges = edges_from_fmi(
         BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(Vertex::new),
+        |s| s.parse::<u32>().ok().map(Vertex::from),
         |s| s.parse::<DistanceType>().ok(),
         |tail, head, weight| WeightedEdge { tail, head, weight },
     )
