@@ -8,18 +8,11 @@ use faster_paths::{
     types::{Distance, Vertex},
     validation::PathTestCase,
 };
-use faster_paths_benchmarks::DistanceType;
-use graph_readers::{edges_from_dimacs, edges_from_fmi};
+use faster_paths_benchmarks::load_graph_edges;
 use indicatif::ParallelProgressIterator;
-use num_traits::Zero;
 use rand::seq::index::sample;
 use rayon::prelude::*;
-use std::{
-    fs::File,
-    io::{BufReader, BufWriter},
-    path::PathBuf,
-    time::Instant,
-};
+use std::{fs::File, io::BufWriter, path::PathBuf, time::Instant};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -71,30 +64,7 @@ fn generate_tests<D: Distance>(
 fn main() {
     let args = Args::parse();
 
-    let edges = {
-        let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
-            Some("fmi") => edges_from_fmi(
-                BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(Vertex::from),
-                |s| s.parse::<DistanceType>().ok(),
-                |tail, head, weight| WeightedEdge { tail, head, weight },
-            )
-            .unwrap(),
-            Some("gr") => edges_from_dimacs(
-                BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<Vertex>().ok(),
-                |s| s.parse::<DistanceType>().ok(),
-                |tail, head, weight| WeightedEdge { tail, head, weight },
-            )
-            .unwrap(),
-            Some(extension) => panic!("extension {} not found", extension),
-            None => panic!("no extension found"),
-        };
-        edges.retain(|edge| edge.weight >= u32::zero());
-        edges.par_sort();
-        edges.dedup_by_key(|edge| (edge.tail, edge.head));
-        edges
-    };
+    let edges = load_graph_edges(&args.graph);
     let graph = CsrGraph::from_flat(edges);
 
     let start = Instant::now();

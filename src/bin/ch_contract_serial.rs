@@ -1,12 +1,7 @@
-use faster_paths::{contraction_hierarchy::contract_graph_sequential, graph::WeightedEdge, types::Vertex};
 use clap::Parser;
-use faster_paths_benchmarks::DistanceType;
-use graph_readers::edges_from_fmi;
-use std::{
-    fs::File,
-    io::{BufReader, BufWriter},
-    path::PathBuf,
-};
+use faster_paths::contraction_hierarchy::contract_graph_sequential;
+use faster_paths_benchmarks::load_graph_edges;
+use std::{fs::File, io::BufWriter, path::PathBuf, time::Instant};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -23,15 +18,12 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let edges = edges_from_fmi(
-        BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(Vertex::from),
-        |s| s.parse::<DistanceType>().ok(),
-        |tail, head, weight| WeightedEdge { tail, head, weight },
-    )
-    .unwrap();
-    let contraction_hierarchy = contract_graph_sequential(&edges);
-    let output = File::create(args.contraction_hierarchy).unwrap();
+    let edges = load_graph_edges(&args.graph);
 
+    let start = Instant::now();
+    let contraction_hierarchy = contract_graph_sequential(&edges);
+    println!("Contraction took {:?}", start.elapsed());
+
+    let output = File::create(args.contraction_hierarchy).unwrap();
     postcard::to_io(&contraction_hierarchy, BufWriter::new(output)).unwrap();
 }

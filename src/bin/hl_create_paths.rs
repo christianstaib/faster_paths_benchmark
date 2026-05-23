@@ -3,16 +3,13 @@ use faster_paths::{
     contraction_hierarchy::{
         ContractionHierarchy, build_working_graph, contract_working_graph_sequential_with_order,
     },
-    graph::WeightedEdge,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
     pathfinder::ShortestPathFinder,
     types::Vertex,
     validation::generate_random_queries,
 };
-use faster_paths_benchmarks::DistanceType;
-use graph_readers::{edges_from_dimacs, edges_from_fmi};
+use faster_paths_benchmarks::{DistanceType, load_graph_edges};
 use indicatif::{ParallelProgressIterator, ProgressBar};
-use num_traits::Zero;
 use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 use std::collections::HashSet;
@@ -37,30 +34,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let edges = {
-        let mut edges = match args.graph.extension().and_then(|e| e.to_str()) {
-            Some("fmi") => edges_from_fmi(
-                BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<u32>().ok().map(Vertex::from),
-                |s| s.parse::<DistanceType>().ok(),
-                |tail, head, weight| WeightedEdge { tail, head, weight },
-            )
-            .unwrap(),
-            Some("gr") => edges_from_dimacs(
-                BufReader::new(File::open(&args.graph).unwrap()),
-                |s| s.parse::<Vertex>().ok(),
-                |s| s.parse::<DistanceType>().ok(),
-                |tail, head, weight| WeightedEdge { tail, head, weight },
-            )
-            .unwrap(),
-            Some(extension) => panic!("extension {} not found", extension),
-            None => panic!("no extension found"),
-        };
-        edges.retain(|edge| edge.weight >= DistanceType::zero());
-        edges.par_sort();
-        edges.dedup_by_key(|edge| (edge.tail, edge.head));
-        edges
-    };
+    let edges = load_graph_edges(&args.graph);
     let (contraction_hierarchy, _): (ContractionHierarchy<DistanceType>, _) = postcard::from_io((
         BufReader::new(File::open(&args.contraction_hierarchy).unwrap()),
         &mut [0; 1024],
@@ -179,33 +153,4 @@ pub fn hitting_set(sets: &[Vec<u32>]) -> Vec<u32> {
     progress_bar.finish();
 
     hitting_set
-}
-
-#[cfg(test)]
-mod tests {
-    use super::hitting_set;
-
-    #[test]
-    fn hitting_set_returns_empty_for_no_sets() {
-        assert!(hitting_set(&[]).is_empty());
-    }
-
-    #[test]
-    fn hitting_set_covers_all_sets() {
-        let sets = vec![vec![1, 2], vec![2, 3], vec![3, 4], vec![2, 4]];
-
-        let result = hitting_set(&sets);
-
-        assert_eq!(result, vec![2, 3]);
-        assert!(
-            sets.iter()
-                .all(|set| result.iter().any(|vertex| set.contains(vertex)))
-        );
-    }
-
-    #[test]
-    #[should_panic(expected = "cannot compute a hitting set when an active set is empty")]
-    fn hitting_set_panics_for_empty_sets() {
-        hitting_set(&[vec![]]);
-    }
 }

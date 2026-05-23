@@ -1,15 +1,11 @@
+use clap::Parser;
 use faster_paths::{
     contraction_hierarchy::ContractionHierarchy,
-    graph::WeightedEdge,
     hub_labeling::{HubLabeling, HubLabelingPathfinder},
-    types::Vertex,
     validation::{PathTestCase, validate_distances, validate_paths},
 };
-use clap::Parser;
-use faster_paths_benchmarks::DistanceType;
-use graph_readers::edges_from_fmi;
-use rayon::prelude::*;
-use std::{fs::File, io::BufReader, path::PathBuf, time::Duration};
+use faster_paths_benchmarks::{DistanceType, load_graph_edges, report_validation_result};
+use std::{fs::File, io::BufReader, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -38,15 +34,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let mut graph_edges = edges_from_fmi(
-        BufReader::new(File::open(&args.graph).unwrap()),
-        |s| s.parse::<u32>().ok().map(Vertex::from),
-        |s| s.parse::<DistanceType>().ok(),
-        |tail, head, weight| WeightedEdge { tail, head, weight },
-    )
-    .unwrap();
-    graph_edges.par_sort();
-    graph_edges.dedup_by_key(|edge| (edge.tail, edge.head));
+    let graph_edges = load_graph_edges(&args.graph);
 
     let (contraction_hierarchy, _): (ContractionHierarchy<DistanceType>, _) = postcard::from_io((
         BufReader::new(File::open(&args.contraction_hierarchy).unwrap()),
@@ -74,33 +62,5 @@ fn main() {
 
     if !distances_valid || !paths_valid {
         std::process::exit(1);
-    }
-}
-
-fn report_validation_result(
-    validation_target: &str,
-    tests_len: usize,
-    validation_result: Result<Duration, Vec<String>>,
-) -> bool {
-    match validation_result {
-        Ok(average_runtime) => {
-            println!(
-                "All {} {} correct. Average runtime: {:?}.",
-                tests_len, validation_target, average_runtime
-            );
-            true
-        }
-
-        Err(failures) => {
-            failures.iter().for_each(|message| eprintln!("{message}"));
-
-            eprintln!(
-                "{} of {} {} failed.",
-                failures.len(),
-                tests_len,
-                validation_target
-            );
-            false
-        }
     }
 }
