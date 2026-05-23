@@ -227,6 +227,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 [[package]]
 name = "faster_paths"
 version = "0.1.0"
+source = "git+https://github.com/christianstaib/faster_paths.git#c73ed27340d1dbfac7c41a117c0efab239b055c3"
 dependencies = [
  "num-traits",
  "rand",
