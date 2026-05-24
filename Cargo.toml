@@ -4,18 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# faster_paths = { path = "../faster_paths/" }
-faster_paths  = { git = "https://github.com/christianstaib/faster_paths.git" }
+faster_paths = { path = "../faster_paths/" }
+# faster_paths  = { git = "https://github.com/christianstaib/faster_paths.git" }
 clap = { version = "4.4", features = ["derive"] }
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
 indicatif = { version = "0.18.4", features = ["rayon"] }
 num-traits = "0.2.19"
-ordered-float = "5.3"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rand = "0.10.1"
 rayon = "1.10"
 rustc-hash = "2.1"
 serde_json = "1.0"
+serde = "1.0.228"
+ordered-float = { version = "5.3", features = ["serde"] }
 
 [profile.profiling]
 inherits = "release"

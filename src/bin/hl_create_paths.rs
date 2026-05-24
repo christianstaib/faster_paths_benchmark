@@ -10,6 +10,7 @@ use faster_paths::{
 };
 use faster_paths_benchmarks::{DistanceType, load_graph_edges};
 use indicatif::{ParallelProgressIterator, ProgressBar};
+use ordered_float::OrderedFloat;
 use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 use std::collections::HashSet;
@@ -86,7 +87,7 @@ fn main() {
 
     let working_graph = build_working_graph(&edges);
     let new_ch = contract_working_graph_sequential_with_order(working_graph, &order);
-    let new_hl = HubLabeling::try_from_contraction_hierarchy(&new_ch, 0).unwrap();
+    let new_hl = HubLabeling::try_from_contraction_hierarchy(&new_ch, OrderedFloat(0.0)).unwrap();
 
     println!(
         "avg label size {}",
@@ -154,3 +155,4 @@ pub fn hitting_set(sets: &[Vec<u32>]) -> Vec<u32> {
 
     hitting_set
 }
+

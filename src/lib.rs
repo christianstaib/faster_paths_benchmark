@@ -4,6 +4,7 @@ use faster_paths::{
 };
 use graph_readers::{edges_from_dimacs, edges_from_fmi};
 use num_traits::Zero;
+use ordered_float::OrderedFloat;
 use rayon::slice::ParallelSliceMut;
 use std::{
     fs::File,
@@ -12,7 +13,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub type DistanceType = u32;
+pub type DistanceType = OrderedFloat<f64>;
 
 pub fn load_graph_edges(graph: impl AsRef<Path>) -> Vec<WeightedEdge<DistanceType>> {
     let graph = graph.as_ref();
