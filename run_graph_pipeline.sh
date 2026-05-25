@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+run_hub_labeling=false
+
+if [[ "${1:-}" == "-l" ]]; then
+  run_hub_labeling=true
+  shift
+fi
+
 if [[ $# -lt 1 ]]; then
-  echo "usage: $0 /path/to/graph.{fmi,gr} [num_tests=1000] [epsilon=0] [dijkstra_queries=100] [ch_hl_queries=100000]"
+  echo "usage: $0 [-l] /path/to/graph.{fmi,gr} [num_tests=1000] [epsilon=0] [dijkstra_queries=100] [ch_hl_queries=100000]"
   exit 1
 fi
 
@@ -36,6 +43,7 @@ echo "Graph:        $graph"
 echo "Tests:        $tests_file"
 echo "CH:           $ch_file"
 echo "HL:           $hl_file"
+echo "Run HL:       $run_hub_labeling"
 echo "Num tests:    $num_tests"
 echo "Epsilon:      $epsilon"
 echo "Dijkstra n:   $dijkstra_benchmark_queries"
@@ -68,22 +76,27 @@ run_bin ch_benchmark \
   --contraction-hierarchy "$ch_file" \
   --num "$ch_hl_benchmark_queries"
 
-run_bin hl_merge \
-  --contraction-hierarchy "$ch_file" \
-  --hub-labeling "$hl_file" \
-  --epsilon "$epsilon"
+if [[ "$run_hub_labeling" == true ]]; then
+  run_bin hl_merge \
+    --contraction-hierarchy "$ch_file" \
+    --hub-labeling "$hl_file" \
+    --epsilon "$epsilon"
 
-run_bin hl_validate \
-  --graph "$graph" \
-  --contraction-hierarchy "$ch_file" \
-  --hub-labeling "$hl_file" \
-  --tests "$tests_file" \
-  --epsilon "$epsilon"
+  run_bin hl_validate \
+    --graph "$graph" \
+    --contraction-hierarchy "$ch_file" \
+    --hub-labeling "$hl_file" \
+    --tests "$tests_file" \
+    --epsilon "$epsilon"
 
-run_bin hl_benchmark \
-  --contraction-hierarchy "$ch_file" \
-  --hub-labeling "$hl_file" \
-  --num "$ch_hl_benchmark_queries"
+  run_bin hl_benchmark \
+    --contraction-hierarchy "$ch_file" \
+    --hub-labeling "$hl_file" \
+    --num "$ch_hl_benchmark_queries"
+else
+  echo
+  echo "==> skipping hub labeling steps (pass -l to enable)"
+fi
 
 echo
 echo "Done."
