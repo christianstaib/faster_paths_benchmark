@@ -28,7 +28,6 @@ graph_stem="${graph_name%.*}"
 
 tests_file="${graph_dir}/${graph_stem}_tests_${num_tests}.json"
 ch_file="${graph_dir}/${graph_stem}.ch.postcard"
-hl_file="${graph_dir}/${graph_stem}.hl.postcard"
 
 run_bin() {
   local bin="$1"
@@ -39,10 +38,11 @@ run_bin() {
   "./target/release/${bin}" "$@"
 }
 
+echo
+echo
 echo "Graph:        $graph"
 echo "Tests:        $tests_file"
 echo "CH:           $ch_file"
-echo "HL:           $hl_file"
 echo "Run HL:       $run_hub_labeling"
 echo "Num tests:    $num_tests"
 echo "Epsilon:      $epsilon"
@@ -77,21 +77,11 @@ run_bin ch_benchmark \
   --num "$ch_hl_benchmark_queries"
 
 if [[ "$run_hub_labeling" == true ]]; then
-  run_bin hl_merge \
-    --contraction-hierarchy "$ch_file" \
-    --hub-labeling "$hl_file" \
-    --epsilon "$epsilon"
-
-  run_bin hl_validate \
+  run_bin hl_merge_validate_benchmark \
     --graph "$graph" \
     --contraction-hierarchy "$ch_file" \
-    --hub-labeling "$hl_file" \
     --tests "$tests_file" \
-    --epsilon "$epsilon"
-
-  run_bin hl_benchmark \
-    --contraction-hierarchy "$ch_file" \
-    --hub-labeling "$hl_file" \
+    --epsilon "$epsilon" \
     --num "$ch_hl_benchmark_queries"
 else
   echo
