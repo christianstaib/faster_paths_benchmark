@@ -35,7 +35,7 @@ fn main() {
     let args = Args::parse();
 
     let graph_edges = load_graph_edges(&args.graph);
-
+ 
     let (contraction_hierarchy, _): (ContractionHierarchy<DistanceType>, _) = postcard::from_io((
         BufReader::new(File::open(&args.contraction_hierarchy).unwrap()),
         &mut [0; 1024],

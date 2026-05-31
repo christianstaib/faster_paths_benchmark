@@ -1,7 +1,6 @@
 use clap::Parser;
 use faster_paths::{
     classical_search::DijkstraPathfinder,
-    data_structures::VecSearchState,
     graph::{CsrGraph, GraphLike, WeightedEdge},
     path::Query,
     pathfinder::ShortestPathFinder,
@@ -52,7 +51,7 @@ fn generate_tests<D: Distance>(
         .into_par_iter()
         .progress()
         .map_init(
-            || DijkstraPathfinder::<_, VecSearchState<_>>::new(graph),
+            || DijkstraPathfinder::new(graph),
             |pathfinder, query| PathTestCase {
                 query,
                 distance: pathfinder.distance(&query),

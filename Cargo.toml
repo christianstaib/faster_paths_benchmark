@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# faster_paths = { path = "../faster_paths/", features = ["progress"] }
-faster_paths  = { git = "https://github.com/christianstaib/faster_paths.git" }
+faster_paths = { path = "../faster_paths/", features = ["progress"] }
+# faster_paths  = { git = "https://github.com/christianstaib/faster_paths.git" }
 clap = { version = "4.4", features = ["derive"] }
 graph_readers = { git = "https://github.com/christianstaib/graph_readers.git" }
 indicatif = { version = "0.18.4", features = ["rayon"] }
